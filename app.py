@@ -192,21 +192,29 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ── Carga automática del modelo ───────────────────────────────────────────────
-MODEL_PATH = Path(__file__).parent / "best.onnx"
+# DESPUÉS — busca automáticamente .pt o .onnx
+def buscar_modelo():
+    base = Path(__file__).parent
+    for nombre in ["best.onnx", "best.pt", "model.onnx", "model.pt"]:
+        ruta = base / nombre
+        if ruta.exists():
+            return ruta
+    return None
+
+MODEL_PATH = buscar_modelo()
 
 @st.cache_resource
 def cargar_modelo():
     try:
         from ultralytics import YOLO
-        if not MODEL_PATH.exists():
-            return None, f"No se encontró el archivo: {MODEL_PATH}"
+        if MODEL_PATH is None:
+            return None, "No se encontró best.onnx ni best.pt en la carpeta del proyecto"
         mdl = YOLO(str(MODEL_PATH))
         return mdl, None
     except ImportError:
         return None, "ultralytics no instalado. Ejecuta: pip install ultralytics"
     except Exception as e:
         return None, str(e)
-
 modelo, error_modelo = cargar_modelo()
 
 # ── Barra lateral ─────────────────────────────────────────────────────────────
@@ -221,7 +229,7 @@ with st.sidebar:
     else:
         st.markdown(
             '<div class="info-panel estado-warn">❌ Modelo no encontrado<br>'
-            '<span style="font-size:11px;color:#556070">Coloca best.pt en la misma carpeta que app.py</span></div>',
+            '<span style="font-size:11px;color:#556070">Coloca best.onnx en la misma carpeta que app.py</span></div>',
             unsafe_allow_html=True,
         )
         if error_modelo:
@@ -499,7 +507,7 @@ with tab_camara:
     if not modelo:
         st.markdown(
             '<div class="info-panel estado-warn">⚠ Modelo no encontrado. '
-            'Coloca <b>best.pt</b> en la carpeta del proyecto.</div>',
+            'Coloca <b>best.onnx</b> en la carpeta del proyecto.</div>',
             unsafe_allow_html=True,
         )
     else:
@@ -683,7 +691,7 @@ Después de instalar, reinicia Streamlit:<br>
 """, unsafe_allow_html=True)
 
     if not modelo:
-        st.markdown('<div class="info-panel estado-warn">⚠ Modelo no encontrado. Coloca <b>best.pt</b> en la carpeta del proyecto.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="info-panel estado-warn">⚠ Modelo no encontrado. Coloca <b>best.onnx</b> en la carpeta del proyecto.</div>', unsafe_allow_html=True)
     else:
         # st.camera_input es el widget nativo de Streamlit para acceder a la cámara
         foto = st.camera_input(
